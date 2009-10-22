@@ -8,6 +8,7 @@ class Refraction
     def initialize(env)
       @action = nil
       @method = env['REQUEST_METHOD']
+      @user_agent = env['HTTP_USER_AGENT']
 
       hostname = env['SERVER_NAME']   # because the rack mock doesn't set the HTTP_HOST
       hostname = env['HTTP_HOST'].split(':').first if env['HTTP_HOST']
@@ -53,6 +54,10 @@ class Refraction
 
     def query
       @uri.query
+    end
+
+    def user_agent
+      @user_agent
     end
 
     # actions

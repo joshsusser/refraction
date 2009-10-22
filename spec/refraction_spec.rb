@@ -156,4 +156,25 @@ describe Refraction do
       Refraction.new(app).call(env)
     end
   end
+
+  describe "request values" do
+    before(:each) do
+      Refraction.configure do |req|
+        if req.user_agent =~ /FeedBurner/
+          req.permanent! "http://yes.com/"
+        else
+          req.permanent! "http://no.com/"
+        end
+      end
+    end
+
+    it "should set user_agent to HTTP_USER_AGENT" do
+      env = Rack::MockRequest.env_for('http://foo.com/', :method => 'get')
+      env['HTTP_USER_AGENT'] = 'FeedBurner'
+      app = mock('app')
+      response = Refraction.new(app).call(env)
+      response[0].should == 301
+      response[1]['Location'].should == "http://yes.com/"
+    end
+  end
 end
