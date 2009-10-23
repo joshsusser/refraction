@@ -1,7 +1,7 @@
 Refraction
 ==========
 
-Introduction goes here.
+Refraction is a Rack middleware replacement for `mod_rewrite`.
 
 
 Example

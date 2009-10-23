@@ -157,10 +157,10 @@ describe Refraction do
     end
   end
 
-  describe "request values" do
+  describe "environment" do
     before(:each) do
       Refraction.configure do |req|
-        if req.user_agent =~ /FeedBurner/
+        if req.env['HTTP_USER_AGENT'] =~ /FeedBurner/
           req.permanent! "http://yes.com/"
         else
           req.permanent! "http://no.com/"
@@ -168,7 +168,7 @@ describe Refraction do
       end
     end
 
-    it "should set user_agent to HTTP_USER_AGENT" do
+    it "should expose environment settings" do
       env = Rack::MockRequest.env_for('http://foo.com/', :method => 'get')
       env['HTTP_USER_AGENT'] = 'FeedBurner'
       app = mock('app')

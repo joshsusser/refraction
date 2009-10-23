@@ -2,13 +2,12 @@ require 'rack'
 
 class Refraction
   class RequestContext
-    attr_reader :method
+    attr_reader :env
     attr_reader :status, :message, :action
 
     def initialize(env)
       @action = nil
-      @method = env['REQUEST_METHOD']
-      @user_agent = env['HTTP_USER_AGENT']
+      @env = env
 
       hostname = env['SERVER_NAME']   # because the rack mock doesn't set the HTTP_HOST
       hostname = env['HTTP_HOST'].split(':').first if env['HTTP_HOST']
@@ -56,8 +55,8 @@ class Refraction
       @uri.query
     end
 
-    def user_agent
-      @user_agent
+    def method
+      @env['REQUEST_METHOD']
     end
 
     # actions
