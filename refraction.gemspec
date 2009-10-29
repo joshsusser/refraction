@@ -23,6 +23,7 @@ Gem::Specification.new do |s|
      "geminstaller.yml",
      "install.rb",
      "lib/refraction.rb",
+     "refraction.gemspec",
      "spec/refraction_spec.rb",
      "spec/spec_helper.rb"
   ]
