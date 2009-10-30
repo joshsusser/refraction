@@ -1,4 +1,5 @@
 require 'rack'
+require 'uri'
 
 class Refraction
   class RequestContext
