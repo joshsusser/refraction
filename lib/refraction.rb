@@ -65,7 +65,9 @@ class Refraction
       if options.is_a?(String)
         @uri = URI.parse(options)
       else
-        @uri.port = nil
+        if [:scheme, :protocol, :host, :port].any? {|k| options[k]}
+          @uri.port = nil
+        end
         options.each do |k,v|
           k = 'scheme' if k == :protocol
           @uri.send("#{k}=", v)

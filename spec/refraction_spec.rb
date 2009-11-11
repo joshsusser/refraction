@@ -93,6 +93,22 @@ describe Refraction do
     end
   end
 
+  describe "using hash arguments but not changing scheme, host, or port" do
+    before do
+      Refraction.configure do |req|
+        req.permanent! :path => "/bar", :query => "baz"
+      end
+    end
+
+    it "should not clear the port" do
+      env = Rack::MockRequest.env_for('http://bar.com:3000/', :method => 'get')
+      app = mock('app')
+      response = Refraction.new(app).call(env)
+      response[0].should == 301
+      response[1]['Location'].should == "http://bar.com:3000/bar?baz"
+    end
+  end
+
   describe "temporary redirect for found" do
     before(:each) do
       Refraction.configure do |req|
