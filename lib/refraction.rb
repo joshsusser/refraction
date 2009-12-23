@@ -26,12 +26,9 @@ class Refraction
     end
 
     def response
-      headers = {
-        'Location' => location,
-        'Content-Type' => 'text/plain',
-        'Content-Length' => message.length.to_s
-      }
-      [status, headers, message]
+      headers = @headers || { 'Location' => location, 'Content-Type' => 'text/plain' }
+      headers['Content-Length'] = message.length.to_s
+      [status, headers, [message]]
     end
 
     # URI part accessors
@@ -95,6 +92,13 @@ class Refraction
       @message = "moved to #{@uri}"
     end
 
+    def respond!(status, headers, content)
+      @action = :respond
+      @status = status
+      @headers = headers
+      @message = content
+    end
+
     def location
       @uri.to_s
     end
@@ -124,7 +128,7 @@ class Refraction
       self.rules.call(context)
 
       case context.action
-      when :permanent, :found
+      when :permanent, :found, :respond
         context.response
       when :rewrite
         env["rack.url_scheme"]                 = context.scheme

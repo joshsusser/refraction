@@ -173,6 +173,24 @@ describe Refraction do
     end
   end
 
+  describe "generate arbitrary response" do
+    before(:each) do
+      Refraction.configure do |req|
+        req.respond!(503, {'Content-Type' => 'text/plain'}, "Site down for maintenance.")
+      end
+    end
+
+    it "should respond with status, headers and content" do
+      env = Rack::MockRequest.env_for('http://example.com', :method => 'get')
+      app = mock('app')
+      response = Refraction.new(app).call(env)
+      response[0].should == 503
+      response[1]['Content-Length'].to_i.should == "Site down for maintenance.".length
+      response[1]['Content-Type'].should == "text/plain"
+      response[2].should == ["Site down for maintenance."]
+    end
+  end
+
   describe "environment" do
     before(:each) do
       Refraction.configure do |req|

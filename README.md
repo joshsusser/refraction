@@ -40,6 +40,10 @@ Refraction can be installed in a Rails application as a plugin.
 
     $ script/plugin install git://github.com/pivotal/refraction.git
 
+It can also be used as a gem:
+
+    $ gem install refraction
+
 In `environments/production.rb`, add Refraction at or near the top of your middleware stack.
 
     config.middleware.insert_before(::Rack::Lock, ::Refraction, {})
@@ -101,6 +105,17 @@ hash argument to set the URL or some of its components.
 The `found!` method tells Refraction to return a response with a `302 Found` status, and sets the
 URL for the Location header. Like `#rewrite!` it can take either a string or hash argument to set
 the URL or some of its components.
+
+### `RequestContext#respond!(status, headers, content)`
+
+Use `respond!` to return an arbitrary response to the request. This is useful for responding with
+the contents of a static file. For example:
+
+    req.respond!(503, {'Content-Type' => 'text/html'}, File.read(MAINTENANCE_PATH))
+
+The args are largely the same as the contents of a standard Rack response array with the exceptions
+that you don't need to wrap the content in an array, and the Content-Length header is generated so it
+should not be supplied.
 
 ### URL components
 
