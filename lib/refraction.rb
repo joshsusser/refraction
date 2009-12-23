@@ -57,6 +57,15 @@ class Refraction
       @env['REQUEST_METHOD']
     end
 
+    # borrowed from Rack Request class, i.e. time to refactor
+    def ip
+      if addr = @env['HTTP_X_FORWARDED_FOR']
+        addr.split(',').last.strip
+      else
+        @env['REMOTE_ADDR']
+      end
+    end
+
     # actions
 
     def set(options)
