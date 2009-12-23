@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = %q{refraction}
-  s.version = "0.1.0"
+  s.version = "0.1.3"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Pivotal Labs", "Josh Susser", "Sam Pierson", "Wai Lun Mang"]
-  s.date = %q{2009-10-29}
+  s.date = %q{2009-12-23}
   s.description = %q{Reflection is a Rails plugin and standalone Rack middleware library. Give up quirky config syntax and use plain old Ruby for your rewrite and redirection rules.}
   s.email = %q{gems@pivotallabs.com}
   s.extra_rdoc_files = [
