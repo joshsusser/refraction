@@ -108,8 +108,14 @@ class Refraction
       @message = content
     end
 
+    ### output
+
     def location
       @uri.to_s
+    end
+
+    def http_host
+      self.port ? "#{self.host}:#{self.port}" : self.host
     end
 
   end   # RequestContext
@@ -141,7 +147,8 @@ class Refraction
         context.response
       when :rewrite
         env["rack.url_scheme"]                 = context.scheme
-        env["HTTP_HOST"] = env["SERVER_NAME"]  = context.host
+        env["HTTP_HOST"]                       = context.http_host
+        env["SERVER_NAME"]                     = context.host
         env["HTTP_PORT"]                       = context.port if context.port
         env["PATH_INFO"] = env["REQUEST_PATH"] = context.path
         env["QUERY_STRING"]                    = context.query

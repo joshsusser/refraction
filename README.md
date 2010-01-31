@@ -129,4 +129,5 @@ agent property.
   * Josh Susser (maintainer)
   * Sam Pierson
   * Wai Lun Mang
+  * Brian Morearty
 

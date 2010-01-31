@@ -91,21 +91,81 @@ describe Refraction do
         response[1]['Location'].should == "http://foo.com/bar?baz"
       end
     end
-  end
 
-  describe "using hash arguments but not changing scheme, host, or port" do
-    before do
-      Refraction.configure do |req|
-        req.permanent! :path => "/bar", :query => "baz"
+    describe "using hash arguments but not changing scheme, host, or port" do
+      before do
+        Refraction.configure do |req|
+          req.permanent! :path => "/bar", :query => "baz"
+        end
+      end
+
+      it "should not clear the port" do
+        env = Rack::MockRequest.env_for('http://bar.com:3000/', :method => 'get')
+        app = mock('app')
+        response = Refraction.new(app).call(env)
+        response[0].should == 301
+        response[1]['Location'].should == "http://bar.com:3000/bar?baz"
       end
     end
 
-    it "should not clear the port" do
-      env = Rack::MockRequest.env_for('http://bar.com:3000/', :method => 'get')
-      app = mock('app')
-      response = Refraction.new(app).call(env)
-      response[0].should == 301
-      response[1]['Location'].should == "http://bar.com:3000/bar?baz"
+    describe "with or without port number" do
+    before(:each) do
+      Refraction.configure do |req|
+        case req.host 
+        when "asterix.example.com"
+          req.permanent! :path => "/potion#{req.path}"
+        when "obelix.example.com"
+          req.permanent! :host => "menhir.example.com"
+        when "getafix.example.com"
+          req.permanent! :scheme => "https"
+        when "dogmatix.example.com"
+          req.permanent! :port => 3001
+        end
+      end
+    end
+
+      it "should include port in Location if request had a port and didn't change scheme, host, or port" do
+        env = Rack::MockRequest.env_for('http://asterix.example.com:3000/1', :method => 'get')
+        app = mock('app')
+        response = Refraction.new(app).call(env)
+        response[0].should == 301
+        response[1]['Location'].should include("asterix.example.com:3000")
+      end
+
+      it "should not include port in Location if request didn't specify a port" do
+        env = Rack::MockRequest.env_for('http://asterix.example.com/1', :method => 'get')
+        app = mock('app')
+        response = Refraction.new(app).call(env)
+        response[0].should == 301
+        response[1]['Location'].should include("asterix.example.com")
+        response[1]['Location'].should_not include(":3000")
+      end
+
+      it "should remove port from Location if host was changed" do
+        env = Rack::MockRequest.env_for('http://obelix.example.com:3000/1', :method => 'get')
+        app = mock('app')
+        response = Refraction.new(app).call(env)
+        response[0].should == 301
+        response[1]['Location'].should include("menhir.example.com")
+        response[1]['Location'].should_not include(":3000")
+      end
+
+      it "should remove port from Location if scheme was changed" do
+        env = Rack::MockRequest.env_for('http://getafix.example.com:3000/1', :method => 'get')
+        app = mock('app')
+        response = Refraction.new(app).call(env)
+        response[0].should == 301
+        response[1]['Location'].should include("getafix.example.com")
+        response[1]['Location'].should_not include(":3000")
+      end
+
+      it "should change port in Location if port was changed" do
+        env = Rack::MockRequest.env_for('http://dogmatix.example.com:3000/1', :method => 'get')
+        app = mock('app')
+        response = Refraction.new(app).call(env)
+        response[0].should == 301
+        response[1]['Location'].should include("dogmatix.example.com:3001")
+      end
     end
   end
 
