@@ -2,83 +2,24 @@ require 'rack'
 require 'uri'
 
 class Refraction
-  class RequestContext
-    attr_reader :env
-    attr_reader :status, :message, :action
 
-    def initialize(env)
-      @action = nil
-      @env = env
+  class Request < Rack::Request
+    attr_reader :action, :status, :message
+    def method; request_method; end
+    def query;  query_string;   end
 
-      hostname = env['SERVER_NAME']   # because the rack mock doesn't set the HTTP_HOST
-      hostname = env['HTTP_HOST'].split(':').first if env['HTTP_HOST']
-      env_path = env['PATH_INFO'] || env['REQUEST_PATH']
-
-      @uri = URI::Generic.build(
-        :scheme => env['rack.url_scheme'],
-        :host   => hostname,
-        :path   => env_path.empty? ? '/' : env_path
-      )
-      unless [URI::HTTP::DEFAULT_PORT, URI::HTTPS::DEFAULT_PORT].include?(env['SERVER_PORT'].to_i)
-        @uri.port = env['SERVER_PORT']
-      end
-      @uri.query = env['QUERY_STRING'] if env['QUERY_STRING'] && !env['QUERY_STRING'].empty?
-    end
-
-    def response
-      headers = @headers || { 'Location' => location, 'Content-Type' => 'text/plain' }
-      headers['Content-Length'] = message.length.to_s
-      [status, headers, [message]]
-    end
-
-    # URI part accessors
-
-    def scheme
-      @uri.scheme
-    end
-
-    def host
-      @uri.host
-    end
-
-    def port
-      @uri.port
-    end
-
-    def path
-      @uri.path
-    end
-
-    def query
-      @uri.query
-    end
-
-    def method
-      @env['REQUEST_METHOD']
-    end
-
-    # borrowed from Rack Request class, i.e. time to refactor
-    def ip
-      if addr = @env['HTTP_X_FORWARDED_FOR']
-        addr.split(',').last.strip
-      else
-        @env['REMOTE_ADDR']
-      end
-    end
-
-    # actions
+    ### actions
 
     def set(options)
       if options.is_a?(String)
-        @uri = URI.parse(options)
+        @re_location = options
       else
-        if [:scheme, :protocol, :host, :port].any? {|k| options[k]}
-          @uri.port = nil
-        end
-        options.each do |k,v|
-          k = 'scheme' if k == :protocol
-          @uri.send("#{k}=", v)
-        end
+        @re_scheme = options[:protocol] if options[:protocol] # :protocol is alias for :scheme
+        @re_scheme = options[:scheme]   if options[:scheme]
+        @re_host   = options[:host]     if options[:host]
+        @re_port   = options[:port]     if options[:port]
+        @re_path   = options[:path]     if options[:path]
+        @re_query  = options[:query]    if options[:query]
       end
     end
 
@@ -108,17 +49,39 @@ class Refraction
       @message = content
     end
 
-    ### output
+    ### response
+
+    def response
+      headers = @headers || { 'Location' => location, 'Content-Type' => 'text/plain' }
+      headers['Content-Length'] = message.length.to_s
+      [status, headers, [message]]
+    end
 
     def location
-      @uri.to_s
+      @re_location || url
+    end
+
+    def scheme;       @re_scheme || super; end
+    def host;         @re_host   || super; end
+    def path;         @re_path   || super; end
+    def query_string; @re_query  || super; end
+
+    def port
+      @re_port || ((@re_scheme || @re_host) && default_port) || super
+    end
+
+    def default_port
+      case scheme
+      when "http"  ; 80
+      when "https" ; 443
+      end
     end
 
     def http_host
       self.port ? "#{self.host}:#{self.port}" : self.host
     end
 
-  end   # RequestContext
+  end ### class Request
 
   def self.configure(&block)
     @rules = block
@@ -138,27 +101,37 @@ class Refraction
 
   def call(env)
     if self.rules
-      context = RequestContext.new(env)
+      request = Request.new(env)
 
-      self.rules.call(context)
+      self.rules.call(request)
 
-      case context.action
+      case request.action
       when :permanent, :found, :respond
-        context.response
+        request.response
       when :rewrite
-        env["rack.url_scheme"]                 = context.scheme
-        env["HTTP_HOST"]                       = context.http_host
-        env["SERVER_NAME"]                     = context.host
-        env["HTTP_PORT"]                       = context.port if context.port
-        env["PATH_INFO"] = env["REQUEST_PATH"] = context.path
-        env["QUERY_STRING"]                    = context.query
-        env["REQUEST_URI"] = context.query ? "#{context.path}?#{context.query}" : context.path
+        env["rack.url_scheme"]  = request.scheme
+        env["HTTP_HOST"]        = request.http_host
+        env["SERVER_NAME"]      = request.host
+        env["HTTP_PORT"]        = request.port if request.port
+        env["PATH_INFO"]        = request.path
+        env["QUERY_STRING"]     = request.query
+        env["REQUEST_URI"]      = request.fullpath
         @app.call(env)
       else
         @app.call(env)
       end
     else
       @app.call(env)
+    end
+  end
+end
+
+# Rack version compatibility shim
+
+if Rack.release == "1.0"
+  class Rack::Request
+    def path
+      script_name + path_info
     end
   end
 end
