@@ -131,3 +131,4 @@ agent property.
   * Wai Lun Mang
   * Brian Morearty
 
+Copyright (c) 2010 Pivotal Labs. This software is licensed under the MIT License.
